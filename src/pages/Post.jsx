@@ -4,36 +4,40 @@ import databaseService from "../appWrite/databaseService"
 import { Button, Container } from "../components/index";
 import parse from "html-react-parser";
 import { useSelector } from "react-redux";
+import { BounceLoader } from 'react-spinners'
 
 export default function Post() {
     const [post, setPost] = useState(null);
+    console.log(post)
     const { slug } = useParams();
     const navigate = useNavigate();
-
-    const userData = useSelector((state) => state.userData);
-   console.log("UerData: "+ userData.$id)
-
+    const userData = useSelector((state) => state.authStore.userData);
+    //console.log(userData?.$id)
     const isAuthor = post && userData ? post.userID === userData.$id : false;
     console.log(isAuthor)
+    const [loader, setLoader] = useState(true);
 
     useEffect(() => {
         if (slug) {
-            console.log("Post is coming")
             databaseService.getSinglePost(slug).then((post) => {
-                console.log("hdhjgjfg"+post)
-                if (post){
-                    console.log("if is coming")
+                if (post) {
                     setPost(post);
-                } 
-                else {navigate("/");}
+                    setLoader(false)
+                }
+                else {
+                    navigate("/");
+                    setLoader(false)
+                }
             });
         } else navigate("/");
     }, [slug, navigate]);
 
     const deletePost = () => {
+        setLoader(true)
         databaseService.deletPost(post.$id).then((status) => {
             if (status) {
                 databaseService.deleteFile(post.featuredImage);
+                setLoader(false)
                 navigate("/");
             }
         });
@@ -70,5 +74,13 @@ export default function Post() {
                 </div>
             </Container>
         </div>
-    ) : null;
+    ) : <div className='p-8 place-content-center min-h-screen flex flex-wrap content-between w-full'>
+        <BounceLoader
+            color={"rgba(9, 184, 80)"}
+            loading={loader}
+            size={150}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+        />
+    </div>
 }

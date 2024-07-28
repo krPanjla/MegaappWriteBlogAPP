@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Input, RTE, SelectOption, Button } from "./index"
 import databaseService from '../appWrite/databaseService';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { RingLoader } from 'react-spinners'
 
 function PostForm({ post }) {
+    const [loader, setLoader] = useState(false)
 
     const { handleSubmit, register, watch, setValue, getValues, control } = useForm({
         defaultValues: {
@@ -18,22 +20,24 @@ function PostForm({ post }) {
     });
 
     const navigate = useNavigate();
-    const userData = useSelector((state) => state.userData)
+    const userData = useSelector((state) => state.authStore.userData)
 
     const submit = async (data) => {
-
+        setLoader(true)
         if (post) {
             const image = data.image[0] ? await databaseService.uploadFile(data.image[0]) : null;
             if (image) {
                 databaseService.deleteFile(post.featuredImage)
             }
 
-            const newPost = await databaseService.updatePost(post.$id,{
+            const newPost = await databaseService.updatePost(post.$id, {
                 ...data,
-                featuredImage: image ? image.$id : undefined}
+                featuredImage: image ? image.$id : undefined
+            }
             )
 
             if (newPost) {
+                setLoader(false)
                 navigate(`/post/${newPost.$id}`);
             }
 
@@ -45,11 +49,13 @@ function PostForm({ post }) {
                 const fileId = image.$id
                 data.featuredImage = fileId
                 const newPost = await databaseService.createPost(
-                    { ...data,
-                        userID : userData.$id
+                    {
+                        ...data,
+                        userID: userData.$id
                     },
-                    )
+                )
                 if (newPost) {
+                    setLoader(false)
                     navigate(`/post/${newPost.$id}`);
                 }
 
@@ -59,16 +65,16 @@ function PostForm({ post }) {
     }
 
 
-        const slugTransForm = useCallback((value) => {
-            if (value && typeof (value) === "string") {
-                return value
-                    .trim()
-                    .toLowerCase()
-                    .replace(/[^a-zA-Z\d\s]+/g, "-")
-                    .replace(/\s/g, "-");
-            }
-            return "";
-        }, [])
+    const slugTransForm = useCallback((value) => {
+        if (value && typeof (value) === "string") {
+            return value
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-zA-Z\d\s]+/g, "-")
+                .replace(/\s/g, "-");
+        }
+        return "";
+    }, [])
 
 
 
@@ -85,7 +91,18 @@ function PostForm({ post }) {
 
     return (
         <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
-            <div className="w-2/3 px-2">
+            <div className="w-2/3 px-2 relative">
+
+                {loader && <div className='absolute inset-0 items-center justify-center p-8 place-content-center min-h-screen flex flex-wrap content-between w-full'>
+                    <RingLoader
+                        color={"rgba(9, 184, 80)"}
+                        loading={loader}
+                        size={150}
+                        aria-label="Loading Spinner"
+                        data-testid="loader"
+                    />
+                </div>}
+
                 <Input
                     label="Title :"
                     placeholder="Title"

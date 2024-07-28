@@ -4,51 +4,65 @@ import { useDispatch } from 'react-redux'
 import { login as authLogin } from '../store/authSlice'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { Input , Button, Logo} from './index'
+import { Input, Button, Logo } from './index'
+import { RingLoader } from 'react-spinners'
 
 function Login() {
     const [error, setError] = useState(null)
     const navigate = useNavigate()
     const { register, handleSubmit } = useForm();
     const dispatch = useDispatch();
+    const [loader, setLoader] = useState(false)
 
     const login = async (data) => {
         try {
-            
+
+            setLoader(true)
             setError("")
             const session = await authService.login(data)
-            
+
             if (session) {
-                
-                const userData = authService.getCurrentUser()
-                
+
+                const userData = await authService.getCurrentUser()
+
                 if (userData) {
-                   
+
                     dispatch(authLogin(userData))
-                    
+                    setLoader(false)
                     navigate("/")
                 }
             }
 
         } catch (error) {
             setError(error.message)
+            setLoader(false)
         }
     }
     return (
         <div
-            className='flex items-center justify-center w-full'
+            className=' relative flex items-center justify-center w-full'
         >
-            <div className={`mx-auto w-full max-w-lg bg-gray-100 rounded-xl p-10 border border-black/10`}>
+            {loader && <div className='absolute inset-0 items-center justify-center p-8 place-content-center min-h-screen flex flex-wrap content-between w-full'>
+                <RingLoader
+
+                    color={"rgba(9, 184, 80)"}
+                    loading={loader}
+                    size={150}
+                    aria-label="Loading Spinner"
+                    data-testid="loader"
+                />
+            </div>}
+            <div className={`mx-auto w-full max-w-lg bg-gray-200 rounded-xl p-10 border border-black/10`}>
                 <div className="mb-2 flex justify-center">
                     <span className="inline-block w-full max-w-[100px]">
-                        <Logo width="100%" />
+                        <Logo width="100%" color={true} />
                     </span>
                 </div>
                 <h2 className="text-center text-2xl font-bold leading-tight">Sign in to your account</h2>
                 <p className="mt-2 text-center text-base text-black/60">
                     Don&apos;t have any account?&nbsp;
                     <Link
-                        to="/signIn"
+                        to="/signup"
                         className="font-medium text-primary transition-all duration-200 hover:underline"
                     >
                         Sign Up
